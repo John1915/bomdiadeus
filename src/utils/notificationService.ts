@@ -7,25 +7,22 @@ import { getVerseByDayOfYear } from './databaseService';
 /**
  * Configura as notificações diárias para o aplicativo
  */
-export const setupNotifications = async (): Promise<void> => {
-  // Verificar se o dispositivo pode receber notificações
-  const canSendNotifications = await checkNotificationPermissions();
-  
-  if (!canSendNotifications) {
-    console.log('Permissões de notificação não concedidas');
-    return;
-  }
-  
+export const setupNotifications = async (): Promise<boolean> => {
   try {
-    // Cancelar todas as notificações agendadas anteriormente
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    
-    // Configurar a notificação diária para às 6h da manhã
-    await scheduleNotification();
-    
-    console.log('Notificações configuradas com sucesso!');
+    // Configurar como as notificações devem aparecer
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+
+    // Solicitar permissões se necessário
+    return await requestPermissions();
   } catch (error) {
-    console.error('Erro ao configurar notificações:', error);
+    console.warn('Erro ao configurar notificações:', error);
+    return false;  // Retornar falso em caso de erro, mas não interromper o fluxo
   }
 };
 
@@ -68,41 +65,49 @@ const scheduleNotification = async (): Promise<void> => {
 /**
  * Verifica e solicita permissões para enviar notificações
  */
-export const checkNotificationPermissions = async (): Promise<boolean> => {
-  // Verificar se o dispositivo é um emulador
-  if (!Device.isDevice) {
-    console.log('Notificações não funcionam em emuladores');
-    return false;
+export const requestPermissions = async (): Promise<boolean> => {
+  try {
+    if (Platform.OS === 'android') {
+      // No Android moderno, precisamos solicitar explicitamente as permissões
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Bom Dia Deus',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      }).catch(err => console.warn('Erro ao configurar canal de notificação:', err));
+    }
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync()
+      .catch(err => {
+        console.warn('Erro ao verificar permissões existentes:', err);
+        return { status: 'error' };
+      });
+    
+    let finalStatus = existingStatus;
+    
+    // Se não temos permissão, solicitar ao usuário
+    if (existingStatus !== 'granted') {
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      } catch (err) {
+        console.warn('Erro ao solicitar permissões:', err);
+        return false;
+      }
+    }
+    
+    return finalStatus === 'granted';
+  } catch (error) {
+    console.warn('Erro ao gerenciar permissões:', error);
+    return false;  // Retornar falso em caso de erro, mas não interromper o fluxo
   }
-  
-  // Verificar permissão atual
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-  
-  // Se não tiver permissão, solicitar ao usuário
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-  
-  // Verificar se o dispositivo é Android para configurações específicas
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Versículos Diários',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#3F51B5',
-    });
-  }
-  
-  return finalStatus === 'granted';
 };
 
 /**
  * Envia uma notificação imediatamente (útil para testes)
  */
 export const sendImmediateNotification = async (): Promise<void> => {
-  const canSendNotifications = await checkNotificationPermissions();
+  const canSendNotifications = await requestPermissions();
   
   if (!canSendNotifications) {
     console.log('Permissões de notificação não concedidas');
@@ -132,4 +137,70 @@ export const sendImmediateNotification = async (): Promise<void> => {
   });
   
   console.log('Notificação enviada imediatamente.');
+};
+
+// Agendar notificação diária
+export const scheduleDailyNotification = async (enabled: boolean = true, hour: number = 6, minute: number = 0): Promise<boolean> => {
+  try {
+    // Cancelar notificações existentes antes de agendar novas
+    await Notifications.cancelAllScheduledNotificationsAsync()
+      .catch(err => console.warn('Erro ao cancelar notificações:', err));
+
+    // Se as notificações não estiverem habilitadas, apenas retornar
+    if (!enabled) {
+      console.log('Notificações diárias desativadas pelo usuário');
+      return true;
+    }
+
+    // Verificar permissões antes de agendar
+    const hasPermission = await requestPermissions()
+      .catch(() => false);
+    
+    if (!hasPermission) {
+      console.warn('Sem permissão para agendar notificações');
+      return false;
+    }
+
+    // Obter a data atual para calcular o dia do ano
+    const now = new Date();
+    const dayOfYear = DateUtils.getDayOfYear(now);
+    
+    // Definir o horário da notificação
+    const trigger = {
+      hour,
+      minute,
+      repeats: true,
+    };
+
+    // Agendar a notificação diária
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Bom Dia Deus',
+        body: 'Seu versículo de hoje já está disponível! Toque para ler.',
+        data: { dayOfYear },
+      },
+      trigger,
+    }).catch(err => {
+      console.warn('Erro ao agendar notificação:', err);
+      throw err;
+    });
+
+    console.log(`Notificação diária agendada para ${hour}:${minute}`);
+    return true;
+  } catch (error) {
+    console.warn('Erro ao agendar notificação diária:', error);
+    return false;  // Retornar falso em caso de erro, mas não interromper o fluxo
+  }
+};
+
+// Verificar se as notificações estão habilitadas
+export const checkNotificationsEnabled = async (): Promise<boolean> => {
+  try {
+    const { status } = await Notifications.getPermissionsAsync()
+      .catch(() => ({ status: 'error' }));
+    return status === 'granted';
+  } catch (error) {
+    console.warn('Erro ao verificar status das notificações:', error);
+    return false;  // Assumir que as notificações não estão habilitadas em caso de erro
+  }
 }; 

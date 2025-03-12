@@ -1,87 +1,133 @@
 # Bom Dia Deus
 
-Um aplicativo React Native (Expo) que envia notificações diárias às 6h da manhã com versículos bíblicos para reflexão e aproximação com Deus.
+Aplicativo de versículos bíblicos diários que entrega uma mensagem inspiradora todas as manhãs.
 
-## Funcionalidades
+## ⚠️ Aviso de Solução de Problemas
 
-- 📱 **Notificações Diárias**: Receba um versículo bíblico todos os dias às 6h da manhã
-- 📜 **365 Versículos**: Um versículo diferente para cada dia do ano
-- 🔍 **Pesquisa por Data**: Encontre versículos por mês e dia
-- 📆 **Calendário Completo**: Navegue por todos os 365 versículos do ano
-- 🔄 **Compartilhamento**: Compartilhe versículos com amigos e familiares
-- 📴 **Modo Offline**: Funciona 100% sem internet
+Se você estiver encontrando um **loop de carregamento infinito** ao abrir o aplicativo no Expo Go, siga os passos abaixo para resolver:
 
-## Tecnologias Utilizadas
+1. **Limpe o cache do Expo:**
+   ```bash
+   npx expo start -c
+   ```
 
-- React Native
-- Expo
-- AsyncStorage (armazenamento local)
-- React Navigation
-- React Native Paper (UI)
-- Expo Notifications
+2. **Verifique as dependências:**
+   Se o problema persistir, certifique-se de que todas as dependências estão instaladas:
+   ```bash
+   npm install
+   ```
+   
+3. **Reinstale o Expo Go:**
+   Em alguns casos, reinstalar o aplicativo Expo Go no dispositivo pode resolver o problema.
 
-## Pré-requisitos
+4. **Use a solução de desenvolvimento direto:**
+   Como última opção, você pode executar diretamente no dispositivo usando:
+   ```bash
+   npm run android
+   # ou
+   npm run ios
+   ```
 
-- Node.js (v14 ou superior)
-- npm ou yarn
-- Expo CLI
-- Android Studio (para desenvolvimento Android) ou Xcode (para desenvolvimento iOS)
+## 🌟 Recursos
 
-## Instalação
+- Receba um versículo bíblico todos os dias às 6h da manhã
+- Biblioteca completa com 365 versículos, um para cada dia do ano
+- Interface limpa e intuitiva
+- Pesquisa de versículos por data
+- Compartilhe versículos com amigos e familiares
+- Funciona completamente offline
 
-1. Clone o repositório:
+## 🔧 Tecnologias Utilizadas
+
+- React Native / Expo
+- TypeScript
+- AsyncStorage para persistência local
+- Notificações push para lembretes diários
+- React Navigation para navegação entre telas
+
+## 📋 Pré-requisitos
+
+- Node.js (versão 14.0 ou superior)
+- NPM ou Yarn
+- Expo CLI (`npm install -g expo-cli`)
+- Um dispositivo físico com Expo Go instalado ou um emulador configurado
+
+## 🚀 Instalação
+
+1. **Clone o repositório**
+
 ```bash
 git clone https://github.com/seu-usuario/bomdiadeus.git
 cd bomdiadeus
 ```
 
-2. Instale as dependências:
+2. **Instale as dependências**
+
 ```bash
 npm install
 # ou
-yarn install
+yarn
 ```
 
-3. Inicie o aplicativo:
+3. **Inicie o aplicativo**
+
 ```bash
-npx expo start
+npm start
+# ou
+yarn start
 ```
 
-4. Use o aplicativo Expo Go no seu dispositivo para escanear o QR code ou execute em um emulador.
+4. **Escaneie o QR Code com o aplicativo Expo Go** (Android) ou use a câmera (iOS)
 
-## Estrutura do Projeto
+## 📱 Uso
+
+- **Tela inicial (Início)**: Mostra o versículo do dia
+- **Tela de calendário**: Permite navegar pelos versículos por data
+- **Tela de configurações**: Controle de notificações e informações do aplicativo
+
+Para compartilhar um versículo, pressione o botão "Compartilhar" abaixo do versículo.
+
+## 📁 Estrutura do Projeto
 
 ```
-bomdiadeus/
-├── assets/                  # Imagens, fontes e outros recursos
-├── src/
-│   ├── models/              # Definições de tipos e interfaces
-│   ├── navigation/          # Configuração de navegação
-│   ├── screens/             # Telas do aplicativo
-│   ├── utils/               # Funções utilitárias
-│   │   ├── bibleVerses.ts   # Base de dados com 365 versículos
-│   │   ├── databaseService.ts # Serviço de armazenamento local
-│   │   └── notificationService.ts # Serviço de notificações
-│   └── theme.ts             # Definições de tema e cores
-├── App.tsx                  # Componente raiz do aplicativo
-├── app.json                 # Configuração do Expo
-└── package.json             # Dependências do projeto
+src/
+├── models/        # Interfaces e tipos
+├── navigation/    # Configuração de navegação
+├── screens/       # Telas do aplicativo
+├── theme/         # Estilos e tema
+└── utils/         # Utilitários (banco de dados, notificações)
 ```
 
-## Como Contribuir
+## 🔍 Solução de Problemas Comuns
+
+1. **Notificações não funcionam:**
+   - Verifique se as permissões de notificação estão concedidas nas configurações do dispositivo
+   - Em dispositivos Android, verifique se a otimização de bateria não está impedindo as notificações
+
+2. **Versículos não aparecem:**
+   - Verifique se o banco de dados foi inicializado corretamente
+   - Tente reinstalar o aplicativo
+
+3. **Problemas com a interface:**
+   - Tente limpar o cache do aplicativo Expo Go
+   - Verifique se você está usando a versão mais recente do Expo Go
+
+## 🤝 Contribuições
+
+Contribuições são bem-vindas! Para contribuir:
 
 1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adicionando nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
+2. Crie uma branch para sua feature (`git checkout -b feature/nome-da-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nome-da-feature`)
 5. Abra um Pull Request
 
-## Licença
+## 📄 Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
+Este projeto está licenciado sob a Licença MIT - veja o arquivo LICENSE para detalhes.
 
-## Contato
+## 📧 Contato
 
-Seu Nome - seu-email@exemplo.com
+Seu Nome - [seu-email@exemplo.com](mailto:seu-email@exemplo.com)
 
 Link do Projeto: [https://github.com/seu-usuario/bomdiadeus](https://github.com/seu-usuario/bomdiadeus) 

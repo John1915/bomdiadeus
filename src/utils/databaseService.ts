@@ -12,17 +12,22 @@ const CURRENT_DB_VERSION = '1.0';
 export const initializeDatabase = async (): Promise<void> => {
   try {
     // Verificar se o banco de dados já foi inicializado
-    const dbVersion = await AsyncStorage.getItem(DATABASE_VERSION_KEY);
+    const dbVersion = await AsyncStorage.getItem(DATABASE_VERSION_KEY).catch(() => null);
     
     // Se não existe ou é uma versão diferente, inicializar o banco
     if (dbVersion !== CURRENT_DB_VERSION) {
       console.log('Inicializando banco de dados...');
       
       // Armazenar todos os versículos
-      await AsyncStorage.setItem(VERSES_STORAGE_KEY, JSON.stringify(bibleVerses));
+      await AsyncStorage.setItem(VERSES_STORAGE_KEY, JSON.stringify(bibleVerses))
+        .catch(error => {
+          console.error('Erro ao armazenar versículos:', error);
+          // Continuar mesmo com erro - usaremos os versículos direto da memória em caso de falha
+        });
       
       // Atualizar a versão do banco
-      await AsyncStorage.setItem(DATABASE_VERSION_KEY, CURRENT_DB_VERSION);
+      await AsyncStorage.setItem(DATABASE_VERSION_KEY, CURRENT_DB_VERSION)
+        .catch(error => console.error('Erro ao atualizar versão do banco:', error));
       
       console.log('Banco de dados inicializado com sucesso!');
     } else {
@@ -30,23 +35,28 @@ export const initializeDatabase = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('Erro ao inicializar o banco de dados:', error);
-    throw error;
+    // Não lançar o erro para não interromper a inicialização do app
   }
 };
 
 /**
- * Obtém todos os versículos do banco de dados
+ * Obtém todos os versículos do banco de dados ou do fallback em memória
  */
 export const getAllVerses = async (): Promise<Verse[]> => {
   try {
-    const versesJson = await AsyncStorage.getItem(VERSES_STORAGE_KEY);
+    const versesJson = await AsyncStorage.getItem(VERSES_STORAGE_KEY).catch(() => null);
     if (versesJson) {
-      return JSON.parse(versesJson);
+      try {
+        return JSON.parse(versesJson);
+      } catch (parseError) {
+        console.error('Erro ao analisar JSON dos versículos:', parseError);
+        return bibleVerses; // Fallback para versículos em memória
+      }
     }
-    return [];
+    return bibleVerses; // Usar versículos em memória se não estiver no AsyncStorage
   } catch (error) {
     console.error('Erro ao obter versículos:', error);
-    return [];
+    return bibleVerses; // Fallback para versículos em memória em caso de erro
   }
 };
 
@@ -57,10 +67,15 @@ export const getVerseByDayOfYear = async (dayOfYear: number): Promise<Verse | nu
   try {
     const verses = await getAllVerses();
     // Encontrar o versículo correspondente ao dia (id = dayOfYear)
-    return verses.find(verse => verse.id === dayOfYear) || null;
+    return verses.find(verse => verse.id === dayOfYear) || 
+      // Fallback para o primeiro versículo se não encontrar o específico
+      (verses.length > 0 ? verses[0] : null);
   } catch (error) {
     console.error('Erro ao obter versículo do dia:', error);
-    return null;
+    // Tentar obter diretamente do array em memória
+    const fallbackVerse = bibleVerses.find(verse => verse.id === dayOfYear) || 
+      (bibleVerses.length > 0 ? bibleVerses[0] : null);
+    return fallbackVerse;
   }
 };
 
@@ -73,11 +88,25 @@ export const getVersesByMonth = async (month: number): Promise<Verse[]> => {
     
     // Filtrar os versículos do mês especificado
     return verses.filter(verse => {
-      const date = new Date(new Date().getFullYear(), 0, verse.id);
-      return date.getMonth() + 1 === month;
+      try {
+        const date = new Date(new Date().getFullYear(), 0, verse.id);
+        return date.getMonth() + 1 === month;
+      } catch (dateError) {
+        console.warn('Erro ao processar data para versículo:', dateError);
+        return false;
+      }
     });
   } catch (error) {
     console.error('Erro ao obter versículos do mês:', error);
-    return [];
+    
+    // Fallback: filtrar os versículos em memória
+    return bibleVerses.filter(verse => {
+      try {
+        const date = new Date(new Date().getFullYear(), 0, verse.id);
+        return date.getMonth() + 1 === month;
+      } catch {
+        return false;
+      }
+    });
   }
 }; 
